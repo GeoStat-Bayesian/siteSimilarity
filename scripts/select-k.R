@@ -1,7 +1,7 @@
 # =============================================================================
 # title:        select-k.R
 # summary:      selecting the 'optimal' clustering configuration
-# dependencies: tidyverse
+# dependencies: tidyverse, ggplot2
 # =============================================================================
 
 # clear environment
@@ -9,6 +9,8 @@ rm(list = ls(all.names = TRUE))
 
 # dependencies
 require(tidyverse)
+require(ggplot2)
+require(exPrior)
 
 # source `clustering.R`
 source('scripts/clustering.R')
@@ -193,4 +195,126 @@ cluster_critereon %>%
 # we select 'complete' with k = 7
 split(assignments$complete$k_7$site,
       assignments$complete$k_7$cluster)
+#####
+
+# visualization of selection procedure
+#####
+
+head(cluster_critereon)
+
+# W(k), not penalized
+W_k_plot <- ggplot(cluster_critereon,
+                   aes(x = k, 
+                       y = W, 
+                       group = linkage, 
+                       color = linkage)) + 
+  geom_line() + 
+  geom_point(size = 1.7) +
+  #geom_vline(xintercept = 8, linetype = "dashed") + 
+  labs(y = "W(k)") + 
+  scale_color_manual(values = c("tomato", "blue", "orange")) + 
+  scale_x_continuous(breaks = k_range) +
+  #geom_rect(aes(xmin=7, xmax=9, ymin=-inf, ymax=Inf,
+  #              size = 0,
+  #              alpha = 0.7))+
+  
+  #geom_vline(xintercept = 7, linetype = "dashed") +
+  #geom_vline(xintercept = 8, linetype = "dashed") +
+  #geom_vline(xintercept = 9, linetype = "dashed") +
+  #geom_rect(mapping=aes(xmin=6.8, xmax=11.2, ymin=0.05, ymax=0.2), 
+  #          color="black", alpha=0.0) +
+  
+  ggtitle("W(k), not penalized") + theme_classic() #+
+  #geom_vline(xintercept = 11) +
+  #geom_vline(xintercept = 14) + 
+  #geom_vline(xintercept = 4) + geom_vline(xintercept = 7)
+
+W_k_plot
+
+# number of singletons
+n_sing_plot <- ggplot(cluster_critereon,
+                      aes(x = k, 
+                          y = n_sing, 
+                          group = linkage, 
+                          color = linkage)) + 
+  geom_line() + 
+  geom_point(size = 1.7) +
+  #geom_vline(xintercept = 8, linetype = "dashed") + 
+  labs(y = "n_sing") + 
+  scale_color_manual(values = c("tomato", "blue", "orange")) + 
+  scale_x_continuous(breaks = k_range) +
+  #geom_rect(aes(xmin=7, xmax=9, ymin=-inf, ymax=Inf,
+  #              size = 0,
+  #              alpha = 0.7))+
+  
+  #geom_vline(xintercept = 7, linetype = "dashed") +
+  #geom_vline(xintercept = 8, linetype = "dashed") +
+  #geom_vline(xintercept = 9, linetype = "dashed") +
+  #geom_rect(mapping=aes(xmin=6.8, xmax=11.2, ymin=0.05, ymax=0.2), 
+  #          color="black", alpha=0.0) +
+  
+  ggtitle("Number of Singleton Clusters") + theme_classic()
+
+n_sing_plot
+
+# W(k) + n_sing
+W_k_n_sing_plot <- ggplot(cluster_critereon,
+                          aes(x = k, 
+                              y = W+n_sing, 
+                              group = linkage, 
+                              color = linkage)) + 
+  geom_line() + 
+  geom_point(size = 1.7) +
+  #geom_vline(xintercept = 8, linetype = "dashed") + 
+  labs(y = "W(k) + n_sing") + 
+  scale_color_manual(values = c("tomato", "blue", "orange")) + 
+  scale_x_continuous(breaks = k_range) +
+  #geom_rect(aes(xmin=7, xmax=9, ymin=-inf, ymax=Inf,
+  #              size = 0,
+  #              alpha = 0.7))+
+  
+  #geom_vline(xintercept = 7, linetype = "dashed") +
+  #geom_vline(xintercept = 8, linetype = "dashed") +
+  #geom_vline(xintercept = 9, linetype = "dashed") +
+  #geom_rect(mapping=aes(xmin=6.8, xmax=11.2, ymin=0.05, ymax=0.2), 
+  #          color="black", alpha=0.0) +
+  
+  ggtitle("W(k), penalized") + theme_classic()
+
+
+# W(k) + (n_sing/k)
+penalized_plot <- ggplot(cluster_critereon,
+                         aes(x = k, 
+                             #y = mean_cluster_size,
+                             y = W+(n_sing/k), 
+                             group = linkage, 
+                             color = linkage)) + 
+  geom_line() + 
+  geom_point(size = 1.7) +
+  #geom_vline(xintercept = 8, linetype = "dashed") + 
+  labs(y = "W(k) + n_sing/k") + 
+  scale_color_manual(values = c("tomato", "blue", "orange")) + 
+  scale_x_continuous(breaks = k_range) +
+  #geom_rect(aes(xmin=7, xmax=9, ymin=-inf, ymax=Inf,
+  #              size = 0,
+  #              alpha = 0.7))+
+  
+  #geom_vline(xintercept = 7, linetype = "dashed") +
+  #geom_vline(xintercept = 8, linetype = "dashed") +
+  #geom_vline(xintercept = 9, linetype = "dashed") +
+  #geom_rect(mapping=aes(xmin=6.8, xmax=11.2, ymin=0.05, ymax=0.2), 
+  #          color="black", alpha=0.0) +
+  
+  ggtitle("W(k), penalized") + theme_classic()
+
+penalized_plot
+
+# find the minimizer
+
+cluster_critereon[,"penalized"] <- cluster_critereon$W + (cluster_critereon$n_sing/cluster_critereon$k)
+
+cluster_critereon %>%
+  arrange(penalized)
+
+#####
 
