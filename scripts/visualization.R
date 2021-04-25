@@ -8,7 +8,7 @@ rm(list = ls(all.names = TRUE))
 
 # dependencies
 require(ggplot2)
-
+require(tidyverse)
 # source
 source('scripts/clustering.R')
 
